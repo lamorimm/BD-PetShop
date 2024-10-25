@@ -1,0 +1,205 @@
+Relat-01
+SELECT 
+    e.nome AS 'Nome do Funcionário',
+    e.cpf AS 'CPF do Funcionário',
+    e.dataAdm AS 'Data de Admissão',
+    e.salario AS 'Salário Base',
+    d.nome AS 'Nome do Departamento',
+    t.numero AS 'Telefone de Contato'
+FROM 
+    petshop.Funcionario e
+JOIN 
+    petshop.Setor d ON e.Departamento_idDepartamento = d.idDepartamento
+LEFT JOIN 
+    petshop.Contato t ON e.cpf = t.Funcionario_cpf
+WHERE 
+    e.dataAdm BETWEEN '2019-01-01' AND '2022-03-31'
+ORDER BY 
+    e.dataAdm DESC;
+
+Relat-02
+SELECT 
+    e.nome AS 'Nome do Funcionário', 
+    e.cpf AS 'CPF do Funcionário', 
+    e.dataAdm AS 'Data de Ingresso', 
+    concat('R$ ', format(e.salario, 2, 'pt_BR')) AS 'Salário Atual',
+    e.Departamento_idDepartamento AS 'Código do Departamento', 
+    e.email AS 'E-mail de Contato'
+FROM 
+    petshop.Funcionario e
+WHERE 
+    e.salario < (SELECT AVG(salario) FROM petshop.Funcionario)
+ORDER BY 
+    e.nome ASC;
+
+Relat-03
+SELECT 
+    d.nome AS 'Nome do Setor', 
+    COUNT(e.cpf) AS 'Total de Funcionários', 
+    concat('R$ ', format(AVG(e.salario), 2, 'pt_BR')) AS 'Média Salarial',
+    concat('R$ ', format(AVG(e.comissao), 2, 'pt_BR')) AS 'Média de Comissão'
+FROM 
+    petshop.Setor d
+LEFT JOIN 
+    petshop.Funcionario e ON d.idSetor = e.Departamento_idDepartamento
+GROUP BY 
+    d.idSetor, d.nome
+ORDER BY 
+    d.nome ASC;
+
+Relat-04
+SELECT 
+    e.nome AS 'Nome do Funcionário', 
+    e.cpf AS 'CPF', 
+    e.sexo AS 'Gênero', 
+    e.salario AS 'Salário Mensal', 
+    COUNT(v.idVenda) AS 'Número de Vendas', 
+    SUM(v.valor) AS 'Valor Total Vendido', 
+    SUM(v.comissao) AS 'Comissão Total das Vendas'
+FROM 
+    petshop.Funcionario e
+LEFT JOIN 
+    petshop.Venda v ON e.cpf = v.Funcionario_cpf
+GROUP BY 
+    e.cpf, e.nome, e.sexo, e.salario
+ORDER BY 
+    'Número de Vendas' DESC;
+
+Relat-05
+SELECT 
+    f.nome AS 'Nome do Funcionário',
+    f.cpf AS 'CPF do Funcionário',
+    f.sexo AS 'Gênero',
+    f.salario AS 'Salário',
+    COUNT(v.idVenda) AS 'Número de Vendas com Serviço', 
+    CONCAT('R$ ', format(SUM(isv.valor * isv.quantidade), 2, 'pt_BR')) AS 'Valor Total Vendido com Serviço',
+    CONCAT('R$ ', format(SUM(v.comissao), 2, 'pt_BR')) AS 'Total de Comissão com Serviço'
+FROM 
+    petshop.Funcionario f
+JOIN 
+    petshop.ItensServico isv ON f.cpf = isv.Funcionario_cpf
+JOIN 
+    petshop.Venda v ON v.idVenda = isv.Venda_idVenda
+GROUP BY 
+    f.nome, f.cpf, f.sexo, f.salario
+ORDER BY 
+    'Número de Vendas com Serviço' DESC;
+
+Relat-06
+SELECT
+    p.nome AS 'Nome do Animal',
+    v.data AS 'Data do Atendimento',
+    s.nome AS 'Serviço Realizado',
+    isv.quantidade AS 'Quantidade Realizada',
+    CONCAT('R$ ', format(isv.valor, 2, 'pt_BR')) AS 'Valor Unitário',
+    f.nome AS 'Funcionário Responsável pelo Serviço'
+FROM
+    petshop.ItensServico isv
+JOIN
+    petshop.Animal p ON p.idAnimal = isv.Animal_idAnimal
+JOIN
+    petshop.Servico s ON s.idServico = isv.Servico_idServico
+JOIN
+    petshop.Venda v ON v.idVenda = isv.Venda_idVenda
+JOIN
+    petshop.Funcionario f ON f.cpf = isv.Funcionario_cpf
+ORDER BY
+    v.data DESC;
+
+Relat-07
+SELECT
+    v.data AS 'Data da Transação',
+    CONCAT('R$ ', format(v.valor, 2, 'pt_BR')) AS 'Valor Bruto',
+    CONCAT('R$ ', format(v.desconto, 2, 'pt_BR')) AS 'Desconto Aplicado',
+    CONCAT('R$ ', format(v.valor - IFNULL(v.desconto, 0), 2, 'pt_BR')) AS 'Valor Final',
+    f.nome AS 'Responsável pela Venda'
+FROM
+    petshop.Venda v
+JOIN
+    petshop.Funcionario f ON f.cpf = v.Funcionario_cpf
+JOIN
+    petshop.Cliente c ON c.cpf = v.Cliente_cpf
+ORDER BY
+    v.data DESC;
+
+Relat-08
+SELECT
+    s.nome AS 'Serviço',
+    SUM(isv.quantidade) AS 'Total de Vendas',
+    CONCAT('R$ ', format(SUM(isv.valor), 2, 'pt_BR')) AS 'Valor Total Arrecadado'
+FROM
+    petshop.ItensServico isv
+JOIN
+    petshop.Servico s ON s.idServico = isv.Servico_idServico
+GROUP BY
+    s.nome
+ORDER BY
+    'Total de Vendas' DESC
+LIMIT 10;
+
+
+Relat-09
+SELECT
+    fp.tipo AS 'Forma de Pagamento',
+    COUNT(fp.idFormaPgVenda) AS 'Número de Vendas',
+    CONCAT('R$ ', format(SUM(fp.valorPago), 2, 'pt_BR')) AS 'Valor Total Recebido'
+FROM
+    petshop.FormaPgVenda fp
+JOIN
+    petshop.Venda v ON v.idVenda = fp.Venda_idVenda
+GROUP BY
+    fp.tipo
+ORDER BY
+    'Número de Vendas' DESC;
+
+Relat-10
+SELECT
+    DATE(v.data) AS 'Data da Venda',
+    COUNT(v.idVenda) AS 'Quantidade de Transações',
+    CONCAT('R$ ', format(SUM(v.valor), 2, 'pt_BR')) AS 'Valor Total das Vendas'
+FROM
+    petshop.Venda v
+GROUP BY
+    DATE(v.data)
+ORDER BY
+    'Data da Venda' DESC;
+
+Relat-11
+SELECT 
+    p.nome AS 'Nome do Produto',
+    CONCAT('R$ ', format(p.valorVenda, 2, 'pt_BR')) AS 'Preço do Produto',
+    p.marca AS 'Marca do Produto',
+    f.nome AS 'Fornecedor',
+    f.email AS 'Contato do Fornecedor',
+    t.numero AS 'Telefone do Fornecedor'
+FROM 
+    petshop.Produto p
+JOIN 
+    petshop.ItensCompra ic ON p.idProduto = ic.Produto_idProduto
+JOIN 
+    petshop.Compra c ON ic.Compra_idCompra = c.idCompra
+JOIN 
+    petshop.Fornecedor f ON c.Fornecedor_cpf_cnpj = f.cpf_cnpj
+LEFT JOIN 
+    petshop.Telefone t ON f.cpf_cnpj = t.Fornecedor_cpf_cnpj
+ORDER BY 
+    p.nome;
+
+Relat-12
+SELECT 
+    p.nome AS 'Produto',
+    CAST(SUM(iv.quantidade) AS UNSIGNED) AS 'Quantidade Vendida',
+    CONCAT('R$ ', format(SUM(iv.valor), 2, 'pt_BR')) AS 'Total Arrecadado'
+FROM 
+    petshop.Produto p
+JOIN 
+    petshop.ItensVendaProd iv ON p.idProduto = iv.Produto_idProduto
+JOIN 
+    petshop.Venda v ON iv.Venda_idVenda = v.idVenda
+GROUP BY 
+    p.idProduto, p.nome
+ORDER BY 
+    'Quantidade Vendida' DESC;
+
+
+
